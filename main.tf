@@ -1,4 +1,3 @@
-# Launch master node
 resource "aws_instance" "k8s_master" {
   ami           = var.ami["master"]
   instance_type = var.instance_type["master"]
@@ -10,13 +9,13 @@ resource "aws_instance" "k8s_master" {
 
   connection {
     type        = "ssh"
-    user        = "ubuntu"
+    user        = "root"
     private_key = file("k8s")
     host        = self.public_ip
   }
   provisioner "file" {
     source      = "./master.sh"
-    destination = "/home/ubuntu/master.sh"
+    destination = "/home/ubuntu"
   }
   provisioner "remote-exec" {
     inline = [
@@ -25,11 +24,14 @@ resource "aws_instance" "k8s_master" {
     ]
   }
   provisioner "local-exec" {
-    command = "ansible-playbook -i '${self.public_ip},' playbook.yml"
+    command = "ansible-playbook -i '${self.private_ip},' playbook.yml"
+
   }
+
 }
 
-# Launch worker nodes
+
+
 resource "aws_instance" "k8s_worker" {
   count         = var.worker_instance_count
   ami           = var.ami["worker"]
@@ -42,24 +44,41 @@ resource "aws_instance" "k8s_worker" {
   depends_on      = [aws_instance.k8s_master]
   connection {
     type        = "ssh"
-    user        = "ubuntu"
+    user        = "root"
     private_key = file("k8s")
     host        = self.public_ip
   }
   provisioner "file" {
     source      = "./worker.sh"
-    destination = "/home/ubuntu/worker.sh"
+    destination = "/home/ubuntu"
   }
   provisioner "file" {
     source      = "./join-command.sh"
-    destination = "/home/ubuntu/join-command.sh"
+    destination = "/home/ubuntu/.join-command.sh"
   }
   provisioner "remote-exec" {
     inline = [
       "chmod +x /home/ubuntu/worker.sh",
-      "sudo sh /home/ubuntu/worker.sh k8s-worker-${count.index}",
+      "sudo sh /home/ubuntu/worker.sh k8s-worker-${count.indexx}",
       "sudo sh /home/ubuntu/join-command.sh"
     ]
   }
 
+
+
+
 }
+
+
+
+
+
+
+
+
+
+
+
+
+
+
